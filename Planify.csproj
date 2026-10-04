@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- .NET 10 (LTS). Pour utiliser .NET 8, remplacer par net8.0-windows et passer les paquets EF Core en 8.0.x -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <RootNamespace>Planify</RootNamespace>
+    <AssemblyName>Planify</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>Planify</Product>
+    <Description>Planify - gestion de salles, réservations et plannings</Description>
+    <ApplicationIcon>Resources\planify.ico</ApplicationIcon>
+
+    <!-- Paramètres lus par ApplicationConfiguration.Initialize() -->
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+
+    <!-- Les contrôles sont construits en code (pas de Designer) : cet avertissement de l'analyseur WinForms est sans objet -->
+    <NoWarn>$(NoWarn);WFO1000</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Fournisseur SQLite pour EF Core (inclut Microsoft.Data.Sqlite et la bibliothèque native SQLite) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+    <!-- Outils de migrations (dotnet ef / Add-Migration) : utilisé uniquement au développement -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Logos et icône intégrés à l'exécutable (nom logique = nom du fichier, ex. "logo.png") -->
+    <EmbeddedResource Include="Resources\*.png;Resources\*.ico" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>
