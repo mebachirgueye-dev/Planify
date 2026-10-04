@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Planify.Controls;
 using Planify.Data;
 using Planify.Helpers;
+using Planify.Models;
 using Planify.Pages;
 using Planify.Services;
 
@@ -14,7 +15,7 @@ namespace Planify.Forms;
 /// </summary>
 public sealed class MainForm : Form
 {
-    private sealed record NavItem(PageId Id, string Label, string Subtitle, Func<Control> CreatePage);
+    private sealed record NavItem(PageId Id, string Label, string Subtitle, Func<Control> CreatePage, Role MinimumRole = Role.Utilisateur);
     private sealed record NavSection(string? Caption, NavItem[] Items);
 
     private readonly NavSection[] _sections;
@@ -29,9 +30,17 @@ public sealed class MainForm : Form
     public MainForm(IDbContextFactory<PlanifyDbContext> dbFactory)
     {
         var batiments = new BatimentService(dbFactory);
+        var utilisateurs = new UtilisateurService(dbFactory);
         var databaseInfo = new DatabaseInfoService(dbFactory);
 
-        _sections = BuildNavigation(batiments, databaseInfo);
+        // Le menu est filtré selon le rôle de l'utilisateur connecté :
+        // une entrée n'apparaît que si le rôle courant a au moins le niveau requis.
+        var all = BuildNavigation(batiments, utilisateurs, databaseInfo);
+        _sections = all
+            .Select(s => new NavSection(s.Caption, s.Items.Where(i => Session.HasRole(i.MinimumRole)).ToArray()))
+            .Where(s => s.Items.Length > 0)
+            .ToArray();
+
         foreach (var item in _sections.SelectMany(s => s.Items))
             _items[item.Id] = item;
 
@@ -41,10 +50,10 @@ public sealed class MainForm : Form
 
     // ------------------------------------------------------------------ Définition du menu
 
-    private static NavSection[] BuildNavigation(BatimentService batiments, DatabaseInfoService databaseInfo)
+    private static NavSection[] BuildNavigation(BatimentService batiments, UtilisateurService utilisateurs, DatabaseInfoService databaseInfo)
     {
-        static NavItem Soon(PageId id, string label, string subtitle) =>
-            new(id, label, subtitle, () => new PlaceholderPage(label));
+        static NavItem Soon(PageId id, string label, string subtitle, Role minimumRole = Role.Utilisateur) =>
+            new(id, label, subtitle, () => new PlaceholderPage(label), minimumRole);
 
         return new[]
         {
@@ -55,9 +64,9 @@ public sealed class MainForm : Form
             }),
             new NavSection("RESSOURCES", new[]
             {
-                Soon(PageId.Salles, "Salles", "Gérez les salles et leurs équipements"),
+                Soon(PageId.Salles, "Salles", "Gérez les salles et leurs équipements", Role.Gestionnaire),
                 new NavItem(PageId.Batiments, "Bâtiments", "Gérez les bâtiments de votre établissement",
-                    () => new BatimentsPage(batiments))
+                    () => new BatimentsPage(batiments), Role.Gestionnaire)
             }),
             new NavSection("PLANIFICATION", new[]
             {
@@ -67,9 +76,10 @@ public sealed class MainForm : Form
             }),
             new NavSection("ADMINISTRATION", new[]
             {
-                Soon(PageId.Utilisateurs, "Utilisateurs", "Gérez les comptes et les rôles"),
-                Soon(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports"),
-                Soon(PageId.Parametres, "Paramètres", "Préférences, sauvegardes et restauration")
+                new NavItem(PageId.Utilisateurs, "Utilisateurs", "Gérez les comptes et les rôles",
+                    () => new UtilisateursPage(utilisateurs), Role.Administrateur),
+                Soon(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports", Role.Gestionnaire),
+                Soon(PageId.Parametres, "Paramètres", "Préférences, sauvegardes et restauration", Role.Administrateur)
             })
         };
     }
@@ -142,18 +152,8 @@ public sealed class MainForm : Form
         header.Controls.Add(mark);
         header.Controls.Add(wordmark);
 
-        // Pied de menu : version
-        var version = typeof(MainForm).Assembly.GetName().Version?.ToString(3) ?? "0.1.0";
-        var footer = new Label
-        {
-            Dock = DockStyle.Bottom,
-            Height = Theme.Px(44),
-            Text = $"Planify v{version}",
-            Font = Theme.Small,
-            ForeColor = Theme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(Theme.Px(28), 0, 0, 0)
-        };
+        // Pied de menu : utilisateur connecté + déconnexion + version
+        var footer = BuildUserFooter();
 
         // Entrées du menu
         var nav = new Panel
@@ -201,6 +201,72 @@ public sealed class MainForm : Form
         sidebar.Controls.Add(border);
         nav.BringToFront();
         return sidebar;
+    }
+
+    /// <summary>
+    /// Pied du menu : nom et rôle de l'utilisateur connecté, bouton de déconnexion et version.
+    /// </summary>
+    private Control BuildUserFooter()
+    {
+        var user = Session.Current;
+        var panel = new Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = Theme.Px(132),
+            BackColor = Theme.Surface
+        };
+
+        // Ligne de séparation en haut du pied
+        var separator = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = Theme.Border };
+
+        var name = new Label
+        {
+            Text = user?.NomComplet ?? "Utilisateur",
+            Font = Theme.BodyBold,
+            ForeColor = Theme.Navy,
+            AutoSize = true,
+            Location = new Point(Theme.Px(24), Theme.Px(14))
+        };
+
+        var role = new Label
+        {
+            Text = user is not null ? user.Role.ToString() : string.Empty,
+            Font = Theme.Small,
+            ForeColor = Theme.TextMuted,
+            AutoSize = true,
+            Location = new Point(Theme.Px(24), name.Bottom + Theme.Px(2))
+        };
+
+        var logout = new ThemedButton
+        {
+            Text = "Déconnexion",
+            Kind = ButtonKind.Secondary,
+            Width = Theme.Px(130),
+            Height = Theme.Px(34),
+            Location = new Point(Theme.Px(24), role.Bottom + Theme.Px(8))
+        };
+        logout.Click += (_, _) =>
+        {
+            if (Dialogs.Confirm("Voulez-vous vraiment vous déconnecter ?", this))
+                Close();
+        };
+
+        var version = typeof(MainForm).Assembly.GetName().Version?.ToString(3) ?? "0.1.0";
+        var versionLabel = new Label
+        {
+            Text = $"v{version}",
+            Font = Theme.Small,
+            ForeColor = Theme.TextMuted,
+            AutoSize = true,
+            Location = new Point(Theme.Px(24), logout.Bottom + Theme.Px(6))
+        };
+
+        panel.Controls.Add(name);
+        panel.Controls.Add(role);
+        panel.Controls.Add(logout);
+        panel.Controls.Add(versionLabel);
+        panel.Controls.Add(separator);
+        return panel;
     }
 
     // ------------------------------------------------------------------ Navigation

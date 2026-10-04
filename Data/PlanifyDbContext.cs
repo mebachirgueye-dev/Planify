@@ -14,6 +14,7 @@ public class PlanifyDbContext : DbContext
     }
 
     public DbSet<Batiment> Batiments => Set<Batiment>();
+    public DbSet<Utilisateur> Utilisateurs => Set<Utilisateur>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +26,17 @@ public class PlanifyDbContext : DbContext
 
             // Deux bâtiments ne peuvent pas porter exactement le même nom.
             e.HasIndex(b => b.Nom).IsUnique();
+        });
+
+        modelBuilder.Entity<Utilisateur>(e =>
+        {
+            e.Property(u => u.Nom).IsRequired().HasMaxLength(100);
+            e.Property(u => u.Prenom).IsRequired().HasMaxLength(100);
+            e.Property(u => u.Email).IsRequired().HasMaxLength(200);
+            e.Property(u => u.MotDePasseHash).IsRequired().HasMaxLength(200);
+
+            // L'adresse e-mail sert d'identifiant de connexion : elle doit être unique.
+            e.HasIndex(u => u.Email).IsUnique();
         });
     }
 }

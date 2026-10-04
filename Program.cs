@@ -1,6 +1,7 @@
 using Planify.Data;
 using Planify.Forms;
 using Planify.Helpers;
+using Planify.Services;
 
 namespace Planify;
 
@@ -36,7 +37,44 @@ internal static class Program
             return;
         }
 
-        Application.Run(new MainForm(dbFactory));
+        RunApplication(dbFactory);
+    }
+
+    /// <summary>
+    /// Boucle de connexion :
+    /// - premier lancement (aucun compte) : création du compte administrateur ;
+    /// - ensuite : écran de connexion ;
+    /// - à chaque déconnexion : retour à l'écran de connexion.
+    /// </summary>
+    private static void RunApplication(PlanifyDbContextFactory dbFactory)
+    {
+        var auth = new AuthService(dbFactory);
+        var users = new UtilisateurService(dbFactory);
+
+        while (true)
+        {
+            if (!auth.HasAnyUser())
+            {
+                // Premier lancement : on crée le premier administrateur.
+                using var firstRun = new FirstRunForm(users);
+                if (firstRun.ShowDialog() != DialogResult.OK)
+                    return; // l'utilisateur a annulé : on quitte le logiciel
+            }
+            else
+            {
+                using var login = new LoginForm(auth);
+                if (login.ShowDialog() != DialogResult.OK)
+                    return; // annulation ou fermeture : on quitte le logiciel
+            }
+
+            // Session ouverte : on lance la fenêtre principale.
+            using var main = new MainForm(dbFactory);
+            main.ShowDialog();
+
+            // La fenêtre principale s'est fermée (déconnexion ou fermeture) :
+            // on termine la session et on revient à l'écran de connexion.
+            Session.Logout();
+        }
     }
 
     private static void ReportUnexpectedError(Exception ex)
