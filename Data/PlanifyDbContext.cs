@@ -15,6 +15,9 @@ public class PlanifyDbContext : DbContext
 
     public DbSet<Batiment> Batiments => Set<Batiment>();
     public DbSet<Utilisateur> Utilisateurs => Set<Utilisateur>();
+    public DbSet<Equipement> Equipements => Set<Equipement>();
+    public DbSet<Salle> Salles => Set<Salle>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,5 +41,61 @@ public class PlanifyDbContext : DbContext
             // L'adresse e-mail sert d'identifiant de connexion : elle doit être unique.
             e.HasIndex(u => u.Email).IsUnique();
         });
+
+        modelBuilder.Entity<Equipement>(e =>
+        {
+            e.Property(eq => eq.Nom).IsRequired().HasMaxLength(100);
+            e.Property(eq => eq.Description).HasMaxLength(500);
+
+            // Deux équipements ne peuvent pas porter le même nom.
+            e.HasIndex(eq => eq.Nom).IsUnique();
+        });
+
+        modelBuilder.Entity<Salle>(e =>
+        {
+            e.Property(s => s.Numero).IsRequired().HasMaxLength(50);
+            e.Property(s => s.Type).HasMaxLength(50);
+            e.Property(s => s.Description).HasMaxLength(500);
+
+            // Foreign key vers Batiment
+            e.HasOne(s => s.Batiment)
+                .WithMany()
+                .HasForeignKey(s => s.BatimentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Many-to-many : Salle <-> Equipement
+            e.HasMany(s => s.Equipements)
+                .WithMany(eq => eq.Salles)
+                .UsingEntity("SalleEquipement",
+                    right => right.HasOne(typeof(Equipement)).WithMany().HasForeignKey("EquipementId"),
+                    left => left.HasOne(typeof(Salle)).WithMany().HasForeignKey("SalleId"),
+                    join => join.HasKey("SalleId", "EquipementId"));
+
+            // Combo (Numero, BatimentId) = unique (impossible d'avoir deux "A101" dans le même bâtiment)
+            e.HasIndex(s => new { s.Numero, s.BatimentId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Reservation>(e =>
+        {
+            e.Property(r => r.Motif).IsRequired().HasMaxLength(200);
+
+            // Foreign keys
+            e.HasOne(r => r.Salle)
+                .WithMany(s => s.Reservations)
+                .HasForeignKey(r => r.SalleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(r => r.Utilisateur)
+                .WithMany()
+                .HasForeignKey(r => r.UtilisateurId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Index pour rechercher rapide : réservations d'une salle sur une date donnée
+            e.HasIndex(r => new { r.SalleId, r.Date });
+
+            // Index pour chercher les réservations d'un utilisateur
+            e.HasIndex(r => r.UtilisateurId);
+        });
     }
 }
+

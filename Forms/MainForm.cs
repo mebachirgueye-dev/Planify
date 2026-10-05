@@ -35,7 +35,7 @@ public sealed class MainForm : Form
 
         // Le menu est filtré selon le rôle de l'utilisateur connecté :
         // une entrée n'apparaît que si le rôle courant a au moins le niveau requis.
-        var all = BuildNavigation(batiments, utilisateurs, databaseInfo);
+        var all = BuildNavigation(batiments, utilisateurs, databaseInfo, dbFactory);
         _sections = all
             .Select(s => new NavSection(s.Caption, s.Items.Where(i => Session.HasRole(i.MinimumRole)).ToArray()))
             .Where(s => s.Items.Length > 0)
@@ -50,28 +50,36 @@ public sealed class MainForm : Form
 
     // ------------------------------------------------------------------ Définition du menu
 
-    private static NavSection[] BuildNavigation(BatimentService batiments, UtilisateurService utilisateurs, DatabaseInfoService databaseInfo)
+    private static NavSection[] BuildNavigation(BatimentService batiments, UtilisateurService utilisateurs, DatabaseInfoService databaseInfo, IDbContextFactory<PlanifyDbContext> dbFactory)
     {
         static NavItem Soon(PageId id, string label, string subtitle, Role minimumRole = Role.Utilisateur) =>
             new(id, label, subtitle, () => new PlaceholderPage(label), minimumRole);
+
+        // Services pour Phase 2b
+        var equipements = new EquipementService(dbFactory);
+        var salles = new SalleService(dbFactory);
+        var reservations = new ReservationService(dbFactory);
 
         return new[]
         {
             new NavSection(null, new[]
             {
                 new NavItem(PageId.Dashboard, "Dashboard", "Vue d'ensemble de votre activité",
-                    () => new DashboardPage(batiments, databaseInfo))
+                    () => new DashboardPage(batiments, databaseInfo, salles, reservations))
             }),
             new NavSection("RESSOURCES", new[]
             {
-                Soon(PageId.Salles, "Salles", "Gérez les salles et leurs équipements", Role.Gestionnaire),
+                new NavItem(PageId.Salles, "Salles", "Gérez les salles et leurs équipements",
+                    () => new SallesPage(salles, batiments, equipements), Role.Gestionnaire),
                 new NavItem(PageId.Batiments, "Bâtiments", "Gérez les bâtiments de votre établissement",
                     () => new BatimentsPage(batiments), Role.Gestionnaire)
             }),
             new NavSection("PLANIFICATION", new[]
             {
-                Soon(PageId.Planning, "Planning", "Consultez l'occupation des salles par jour ou par semaine"),
-                Soon(PageId.Reservations, "Réservations", "Créez et suivez les réservations de salles"),
+                new NavItem(PageId.Planning, "Planning", "Consultez l'occupation des salles par jour ou par semaine",
+                    () => new PlanningPage(reservations, salles)),
+                new NavItem(PageId.Reservations, "Réservations", "Créez et suivez les réservations de salles",
+                    () => new ReservationsPage(reservations, salles, utilisateurs)),
                 Soon(PageId.Evenements, "Cours / Événements", "Organisez les cours et les événements")
             }),
             new NavSection("ADMINISTRATION", new[]

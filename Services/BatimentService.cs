@@ -90,6 +90,13 @@ public class BatimentService
         if (entity is null)
             return; // déjà supprimé
 
+        // Vérifier s'il y a des salles dans ce bâtiment
+        bool hasSalles = db.Salles.Any(s => s.BatimentId == id);
+        if (hasSalles)
+            throw new BusinessRuleException(
+                "Impossible de supprimer ce bâtiment : il contient au moins une salle. " +
+                "Supprimez d'abord toutes les salles du bâtiment.");
+
         db.Batiments.Remove(entity);
         db.SaveChanges();
     }

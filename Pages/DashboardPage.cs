@@ -5,12 +5,15 @@ using Planify.Services;
 namespace Planify.Pages;
 
 /// <summary>
-/// Tableau de bord. En phase 1 : le nombre de bâtiments (donnée réelle) et l'état de la base SQLite.
-/// Les autres cartes sont des emplacements qui seront alimentés en phase 2.
+/// Tableau de bord. Affiche des statistiques en temps réel :
+/// - Nombre de bâtiments
+/// - Nombre de salles
+/// - Réservations du jour
+/// - État de la base SQLite
 /// </summary>
 public sealed class DashboardPage : UserControl
 {
-    public DashboardPage(BatimentService batiments, DatabaseInfoService databaseInfo)
+    public DashboardPage(BatimentService batiments, DatabaseInfoService databaseInfo, SalleService? salles = null, ReservationService? reservations = null)
     {
         BackColor = Theme.Background;
         Padding = new Padding(Theme.Px(28), Theme.Px(8), Theme.Px(28), Theme.Px(28));
@@ -39,10 +42,14 @@ public sealed class DashboardPage : UserControl
             cards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
         cards.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        AddCard(cards, 0, "Bâtiments", batiments.Count().ToString(), "Enregistrés dans la base", Theme.Primary);
-        AddCard(cards, 1, "Salles", "—", "Disponible en phase 2", Theme.Accent);
-        AddCard(cards, 2, "Réservations du jour", "—", "Disponible en phase 2", Theme.PrimaryLight);
-        AddCard(cards, 3, "Événements à venir", "—", "Disponible en phase 2", Theme.Success);
+        int batimentCount = batiments.Count();
+        int salleCount = salles?.Count() ?? 0;
+        int reservationTodayCount = reservations?.GetByDate(DateTime.Now).Count ?? 0;
+
+        AddCard(cards, 0, "Bâtiments", batimentCount.ToString(), "Enregistrés dans la base", Theme.Primary);
+        AddCard(cards, 1, "Salles", salleCount.ToString(), "Disponibles", Theme.Accent);
+        AddCard(cards, 2, "Réservations du jour", reservationTodayCount.ToString(), "En cours", Theme.PrimaryLight);
+        AddCard(cards, 3, "Événements à venir", "—", "Bientôt disponible", Theme.Success);
 
         // --- État de la base de données ---
         var dbCard = new CardPanel

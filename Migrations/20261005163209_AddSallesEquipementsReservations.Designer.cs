@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Planify.Data;
 
@@ -10,9 +11,11 @@ using Planify.Data;
 namespace Planify.Migrations
 {
     [DbContext(typeof(PlanifyDbContext))]
-    partial class PlanifyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261005163209_AddSallesEquipementsReservations")]
+    partial class AddSallesEquipementsReservations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");

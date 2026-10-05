@@ -26,6 +26,9 @@
   <ItemGroup>
     <!-- Fournisseur SQLite pour EF Core (inclut Microsoft.Data.Sqlite et la bibliothèque native SQLite) -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+    <!-- Force la bibliothèque native SQLite en 2.1.13 (corrigée) : la version transitive 2.1.11
+         tirée par EF Core est vulnérable (CVE-2025-6965 / GHSA-2m69-gcr7-jv3q). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
     <!-- Outils de migrations (dotnet ef / Add-Migration) : utilisé uniquement au développement -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <PrivateAssets>all</PrivateAssets>
