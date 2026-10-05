@@ -239,10 +239,19 @@ public sealed class PlanningPage : UserControl
     private void LoadData()
     {
         _salles = _salleService.GetAll();
-        _salleFilter.DataSource = _salles;
-        _salleFilter.DisplayMember = "Numero";
-        _salleFilter.ValueMember = "Id";
-        _salleFilter.Items.Insert(0, new ComboBoxItem { Text = "Toutes les salles", Value = 0 });
+
+        // Créer une liste avec l'option "Toutes les salles" en premier
+        var items = new List<ComboBoxItem>
+        {
+            new ComboBoxItem { Text = "Toutes les salles", Value = 0 }
+        };
+        items.AddRange(_salles.Select(s => new ComboBoxItem { Text = s.Numero, Value = s.Id }));
+
+        _salleFilter.DataSource = null;
+        _salleFilter.Items.Clear();
+        _salleFilter.Items.AddRange(items.Cast<object>().ToArray());
+        _salleFilter.DisplayMember = "Text";
+        _salleFilter.ValueMember = "Value";
         _salleFilter.SelectedIndex = 0;
 
         RefreshGrid();
@@ -274,20 +283,31 @@ public sealed class PlanningPage : UserControl
 
     private void RefreshGrid()
     {
-        // Mettre à jour les libellés des boutons selon le mode
-        UpdateNavigationButtons();
+        try
+        {
+            // Mettre à jour les libellés des boutons selon le mode
+            UpdateNavigationButtons();
 
-        // Reconfigurer la grille selon le mode
-        ConfigureGridForView();
+            // Reconfigurer la grille selon le mode
+            ConfigureGridForView();
 
-        // Charger les données
-        var data = GetDataForView();
-        _grid.DataSource = data;
+            // Charger les données
+            var data = GetDataForView();
+            _grid.DataSource = data;
 
-        bool hasRows = data.Count > 0;
-        _grid.Visible = hasRows;
-        _emptyLabel.Visible = !hasRows;
-        _emptyLabel.Text = GetEmptyMessage();
+            bool hasRows = data.Count > 0;
+            _grid.Visible = hasRows;
+            _emptyLabel.Visible = !hasRows;
+            _emptyLabel.Text = GetEmptyMessage();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Actualisation planning", ex);
+            Dialogs.Error($"Erreur lors de l'actualisation du planning :{Environment.NewLine}{ex.Message}", this);
+            _emptyLabel.Visible = true;
+            _emptyLabel.Text = "Erreur lors du chargement des données.";
+            _grid.Visible = false;
+        }
     }
 
     private void UpdateNavigationButtons()

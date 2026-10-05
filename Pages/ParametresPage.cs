@@ -21,6 +21,7 @@ public sealed class ParametresPage : UserControl
     private readonly ThemedButton _openFolderButton = new();
     private readonly ThemedButton _changeFolderButton = new();
     private readonly ThemedButton _cleanButton = new();
+    private readonly ThemedButton _deleteButton = new();
     private readonly Label _currentFolderLabel = new();
     private readonly TextBox _customFolderBox = new();
 
@@ -62,6 +63,11 @@ public sealed class ParametresPage : UserControl
         _cleanButton.Width = Theme.Px(180);
         _cleanButton.Click += (_, _) => CleanOldBackups();
 
+        _deleteButton.Text = "🗑 Supprimer la sélection";
+        _deleteButton.Kind = ButtonKind.Danger;
+        _deleteButton.Width = Theme.Px(200);
+        _deleteButton.Click += (_, _) => DeleteSelected();
+
         _changeFolderButton.Text = "Changer";
         _changeFolderButton.Kind = ButtonKind.Secondary;
         _changeFolderButton.AutoSize = true;
@@ -78,24 +84,27 @@ public sealed class ParametresPage : UserControl
         var toolbar = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = Theme.Px(120),
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 2,
             RowCount = 1,
             BackColor = Theme.Background
         };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        toolbar.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         // Panneau gauche : dossier actuel + actions principales
         var leftPanel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             WrapContents = false,
             FlowDirection = FlowDirection.TopDown,
             BackColor = Theme.Background,
-            Margin = Padding.Empty
+            Margin = Padding.Empty,
+            Padding = new Padding(0, Theme.Px(4), 0, Theme.Px(12))
         };
 
         // Ligne 1 : dossier courant
@@ -180,30 +189,12 @@ public sealed class ParametresPage : UserControl
         _cleanButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
         actionsPanel.Controls.Add(_cleanButton);
 
+        _deleteButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
+        actionsPanel.Controls.Add(_deleteButton);
+
         leftPanel.Controls.Add(actionsPanel);
 
-        // Panneau droit : bouton suppression (aligné à droite)
-        var rightPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            WrapContents = false,
-            FlowDirection = FlowDirection.TopDown,
-            BackColor = Theme.Background,
-            Margin = new Padding(Theme.Px(20), Theme.Px(8), 0, 0)
-        };
-
-        var deleteButton = new ThemedButton
-        {
-            Text = "🗑 Supprimer la sélection",
-            Kind = ButtonKind.Danger,
-            Width = Theme.Px(200),
-        };
-        deleteButton.Click += (_, _) => DeleteSelected();
-        rightPanel.Controls.Add(deleteButton);
-
         toolbar.Controls.Add(leftPanel, 0, 0);
-        toolbar.Controls.Add(rightPanel, 1, 0);
         return toolbar;
     }
 
@@ -300,6 +291,7 @@ public sealed class ParametresPage : UserControl
     {
         bool hasSelection = SelectedBackup is not null;
         _restoreButton.Enabled = hasSelection;
+        _deleteButton.Enabled = hasSelection;
         _cleanButton.Enabled = _backups.Count > 10;
     }
 

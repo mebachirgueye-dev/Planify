@@ -84,22 +84,25 @@ public sealed class RechercheSallesPage : UserControl
         var toolbar = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = Theme.Px(200),
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 1,
             RowCount = 1,
             BackColor = Theme.Background
         };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        toolbar.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var panel = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
             AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             WrapContents = false,
             FlowDirection = FlowDirection.TopDown,
             BackColor = Theme.Background,
-            Margin = Padding.Empty
+            Margin = Padding.Empty,
+            Padding = new Padding(0, Theme.Px(4), 0, Theme.Px(12))
         };
 
         // Ligne 1 : Capacité + Bâtiment + Type
@@ -162,7 +165,14 @@ public sealed class RechercheSallesPage : UserControl
         panel.Controls.Add(line3);
 
         // Ligne 4 : Boutons
-        var line4 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, Theme.Px(4), 0, 0) };
+        var line4 = new FlowLayoutPanel 
+        { 
+            AutoSize = true, 
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlowDirection = FlowDirection.LeftToRight, 
+            WrapContents = true,
+            Margin = new Padding(0, Theme.Px(4), 0, 0) 
+        };
         _searchButton.Margin = new Padding(0, Theme.Px(9), Theme.Px(10), Theme.Px(9));
         line4.Controls.Add(_searchButton);
 
