@@ -18,6 +18,7 @@ public class PlanifyDbContext : DbContext
     public DbSet<Equipement> Equipements => Set<Equipement>();
     public DbSet<Salle> Salles => Set<Salle>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<CoursEvenement> CoursEvenements => Set<CoursEvenement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,6 +96,25 @@ public class PlanifyDbContext : DbContext
 
             // Index pour chercher les réservations d'un utilisateur
             e.HasIndex(r => r.UtilisateurId);
+        });
+
+        modelBuilder.Entity<CoursEvenement>(e =>
+        {
+            e.Property(c => c.Nom).IsRequired().HasMaxLength(120);
+            e.Property(c => c.Description).HasMaxLength(500);
+
+            e.HasOne(c => c.Salle)
+                .WithMany()
+                .HasForeignKey(c => c.SalleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(c => c.Responsable)
+                .WithMany()
+                .HasForeignKey(c => c.ResponsableId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasIndex(c => new { c.SalleId, c.Date });
+            e.HasIndex(c => c.ResponsableId);
         });
     }
 }

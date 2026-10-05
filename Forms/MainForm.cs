@@ -55,10 +55,11 @@ public sealed class MainForm : Form
         static NavItem Soon(PageId id, string label, string subtitle, Role minimumRole = Role.Utilisateur) =>
             new(id, label, subtitle, () => new PlaceholderPage(label), minimumRole);
 
-        // Services pour Phase 2b
+        // Services pour Phase 2b et 3
         var equipements = new EquipementService(dbFactory);
         var salles = new SalleService(dbFactory);
         var reservations = new ReservationService(dbFactory);
+        var cours = new CoursEvenementService(dbFactory);
 
         return new[]
         {
@@ -80,7 +81,8 @@ public sealed class MainForm : Form
                     () => new PlanningPage(reservations, salles)),
                 new NavItem(PageId.Reservations, "Réservations", "Créez et suivez les réservations de salles",
                     () => new ReservationsPage(reservations, salles, utilisateurs)),
-                Soon(PageId.Evenements, "Cours / Événements", "Organisez les cours et les événements")
+                new NavItem(PageId.Evenements, "Cours / Événements", "Organisez les cours et les événements",
+                    () => new CoursEvenementsPage(cours, salles, utilisateurs))
             }),
             new NavSection("ADMINISTRATION", new[]
             {
