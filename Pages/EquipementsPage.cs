@@ -32,6 +32,8 @@ public sealed class EquipementsPage : UserControl
         BackColor = Theme.Background;
         Padding = new Padding(Theme.Px(28), Theme.Px(8), Theme.Px(28), Theme.Px(28));
 
+        InitializeButtons();
+
         var card = BuildGridCard();
         var toolbar = BuildToolbar();
 
@@ -42,25 +44,8 @@ public sealed class EquipementsPage : UserControl
         LoadData();
     }
 
-    private Control BuildToolbar()
+    private void InitializeButtons()
     {
-        var toolbar = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = Theme.Px(56),
-            ColumnCount = 2,
-            RowCount = 1,
-            BackColor = Theme.Background
-        };
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        _search.Width = Theme.Px(320);
-        _search.Font = Theme.Body;
-        _search.BorderStyle = BorderStyle.FixedSingle;
-        _search.PlaceholderText = "Rechercher un équipement…";
-        _search.Anchor = AnchorStyles.Left;
         _search.TextChanged += (_, _) => ApplyFilter();
 
         _addButton.Text = "Ajouter un équipement";
@@ -82,25 +67,14 @@ public sealed class EquipementsPage : UserControl
         _exportButton.Kind = ButtonKind.Secondary;
         _exportButton.Width = Theme.Px(110);
         _exportButton.Click += (_, _) => ExportData();
+    }
 
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight,
-            BackColor = Theme.Background,
-            Margin = Padding.Empty
-        };
-        foreach (var button in new[] { _addButton, _editButton, _deleteButton, _exportButton })
-        {
-            button.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
-            buttons.Controls.Add(button);
-        }
-
-        toolbar.Controls.Add(_search, 0, 0);
-        toolbar.Controls.Add(buttons, 1, 0);
-        return toolbar;
+    private Control BuildToolbar()
+    {
+        return ToolbarBuilder.Build(
+            searchBox: _search,
+            searchPlaceholder: "Rechercher un équipement…",
+            actionButtons: new[] { _addButton, _editButton, _deleteButton, _exportButton });
     }
 
     private Control BuildGridCard()

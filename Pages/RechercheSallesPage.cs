@@ -41,6 +41,8 @@ public sealed class RechercheSallesPage : UserControl
         BackColor = Theme.Background;
         Padding = new Padding(Theme.Px(28), Theme.Px(8), Theme.Px(28), Theme.Px(28));
 
+        InitializeButtons();
+
         var card = BuildGridCard();
         var toolbar = BuildToolbar();
 
@@ -51,6 +53,30 @@ public sealed class RechercheSallesPage : UserControl
         LoadFilters();
         _date.Value = DateTime.Today;
         _date.Checked = false;
+    }
+
+    private void InitializeButtons()
+    {
+        _searchButton.Text = "🔍 Rechercher";
+        _searchButton.Kind = ButtonKind.Primary;
+        _searchButton.Width = Theme.Px(150);
+        _searchButton.Click += (_, _) => Search();
+
+        _clearButton.Text = "Effacer filtres";
+        _clearButton.Kind = ButtonKind.Secondary;
+        _clearButton.Width = Theme.Px(130);
+        _clearButton.Click += (_, _) => ClearFilters();
+
+        _reserverButton.Text = "Réserver la sélection";
+        _reserverButton.Kind = ButtonKind.Primary;
+        _reserverButton.Width = Theme.Px(200);
+        _reserverButton.Click += (_, _) => ReserverSelection();
+        _reserverButton.Enabled = false;
+
+        _exportButton.Text = "Exporter résultats";
+        _exportButton.Kind = ButtonKind.Secondary;
+        _exportButton.Width = Theme.Px(160);
+        _exportButton.Click += (_, _) => ExportResults();
     }
 
     private Control BuildToolbar()
@@ -137,31 +163,15 @@ public sealed class RechercheSallesPage : UserControl
 
         // Ligne 4 : Boutons
         var line4 = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, Theme.Px(4), 0, 0) };
-        _searchButton.Text = "🔍 Rechercher";
-        _searchButton.Kind = ButtonKind.Primary;
-        _searchButton.Width = Theme.Px(150);
-        _searchButton.Click += (_, _) => Search();
+        _searchButton.Margin = new Padding(0, Theme.Px(9), Theme.Px(10), Theme.Px(9));
         line4.Controls.Add(_searchButton);
 
-        _clearButton.Text = "Effacer filtres";
-        _clearButton.Kind = ButtonKind.Secondary;
-        _clearButton.Width = Theme.Px(130);
-        _clearButton.Click += (_, _) => ClearFilters();
         _clearButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
         line4.Controls.Add(_clearButton);
 
-        _reserverButton.Text = "Réserver la sélection";
-        _reserverButton.Kind = ButtonKind.Primary;
-        _reserverButton.Width = Theme.Px(200);
-        _reserverButton.Click += (_, _) => ReserverSelection();
         _reserverButton.Margin = new Padding(Theme.Px(20), Theme.Px(9), 0, Theme.Px(9));
-        _reserverButton.Enabled = false;
         line4.Controls.Add(_reserverButton);
 
-        _exportButton.Text = "Exporter résultats";
-        _exportButton.Kind = ButtonKind.Secondary;
-        _exportButton.Width = Theme.Px(160);
-        _exportButton.Click += (_, _) => ExportResults();
         _exportButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
         line4.Controls.Add(_exportButton);
 

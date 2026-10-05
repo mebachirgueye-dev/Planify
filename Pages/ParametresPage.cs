@@ -33,6 +33,8 @@ public sealed class ParametresPage : UserControl
         BackColor = Theme.Background;
         Padding = new Padding(Theme.Px(28), Theme.Px(8), Theme.Px(28), Theme.Px(28));
 
+        InitializeButtons();
+
         var card = BuildGridCard();
         var toolbar = BuildToolbar();
 
@@ -41,6 +43,34 @@ public sealed class ParametresPage : UserControl
         card.BringToFront();
 
         LoadBackups();
+    }
+
+    private void InitializeButtons()
+    {
+        _backupButton.Text = "💾 Sauvegarder maintenant";
+        _backupButton.Kind = ButtonKind.Primary;
+        _backupButton.Width = Theme.Px(200);
+        _backupButton.Click += (_, _) => CreateBackup();
+
+        _restoreButton.Text = "🔄 Restaurer la sélection";
+        _restoreButton.Kind = ButtonKind.Secondary;
+        _restoreButton.Width = Theme.Px(200);
+        _restoreButton.Click += (_, _) => RestoreSelected();
+
+        _cleanButton.Text = "🧹 Nettoyer (garder 10)";
+        _cleanButton.Kind = ButtonKind.Secondary;
+        _cleanButton.Width = Theme.Px(180);
+        _cleanButton.Click += (_, _) => CleanOldBackups();
+
+        _changeFolderButton.Text = "Changer";
+        _changeFolderButton.Kind = ButtonKind.Secondary;
+        _changeFolderButton.AutoSize = true;
+        _changeFolderButton.Click += (_, _) => ChangeBackupFolder();
+
+        _openFolderButton.Text = "Ouvrir le dossier";
+        _openFolderButton.Kind = ButtonKind.Secondary;
+        _openFolderButton.AutoSize = true;
+        _openFolderButton.Click += (_, _) => OpenBackupFolder();
     }
 
     private Control BuildToolbar()
@@ -91,17 +121,9 @@ public sealed class ParametresPage : UserControl
         _currentFolderLabel.Margin = new Padding(0, Theme.Px(4), Theme.Px(8), 0);
         folderPanel.Controls.Add(_currentFolderLabel);
 
-        _changeFolderButton.Text = "Changer";
-        _changeFolderButton.Kind = ButtonKind.Secondary;
-        _changeFolderButton.AutoSize = true;
-        _changeFolderButton.Click += (_, _) => ChangeBackupFolder();
         _changeFolderButton.Margin = new Padding(0, Theme.Px(2), 0, 0);
         folderPanel.Controls.Add(_changeFolderButton);
 
-        _openFolderButton.Text = "Ouvrir le dossier";
-        _openFolderButton.Kind = ButtonKind.Secondary;
-        _openFolderButton.AutoSize = true;
-        _openFolderButton.Click += (_, _) => OpenBackupFolder();
         _openFolderButton.Margin = new Padding(Theme.Px(6), Theme.Px(2), 0, 0);
         folderPanel.Controls.Add(_openFolderButton);
 
@@ -149,22 +171,13 @@ public sealed class ParametresPage : UserControl
             Margin = new Padding(0, Theme.Px(4), 0, 0)
         };
 
-        _backupButton.Text = "💾 Sauvegarder maintenant";
-        _backupButton.Kind = ButtonKind.Primary;
-        _backupButton.Width = Theme.Px(200);
-        _backupButton.Click += (_, _) => CreateBackup();
+        _backupButton.Margin = new Padding(0, Theme.Px(9), Theme.Px(10), Theme.Px(9));
         actionsPanel.Controls.Add(_backupButton);
 
-        _restoreButton.Text = "🔄 Restaurer la sélection";
-        _restoreButton.Kind = ButtonKind.Secondary;
-        _restoreButton.Width = Theme.Px(200);
-        _restoreButton.Click += (_, _) => RestoreSelected();
+        _restoreButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), Theme.Px(10), Theme.Px(9));
         actionsPanel.Controls.Add(_restoreButton);
 
-        _cleanButton.Text = "🧹 Nettoyer (garder 10)";
-        _cleanButton.Kind = ButtonKind.Secondary;
-        _cleanButton.Width = Theme.Px(180);
-        _cleanButton.Click += (_, _) => CleanOldBackups();
+        _cleanButton.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
         actionsPanel.Controls.Add(_cleanButton);
 
         leftPanel.Controls.Add(actionsPanel);

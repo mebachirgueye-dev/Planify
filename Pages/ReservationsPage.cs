@@ -40,6 +40,8 @@ public sealed class ReservationsPage : UserControl
         BackColor = Theme.Background;
         Padding = new Padding(Theme.Px(28), Theme.Px(8), Theme.Px(28), Theme.Px(28));
 
+        InitializeControls();
+
         var card = BuildGridCard();
         var toolbar = BuildToolbar();
 
@@ -50,45 +52,17 @@ public sealed class ReservationsPage : UserControl
         LoadData();
     }
 
-    private Control BuildToolbar()
+    private void InitializeControls()
     {
-        var toolbar = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            Height = Theme.Px(56),
-            ColumnCount = 3,
-            RowCount = 1,
-            BackColor = Theme.Background
-        };
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-
-        // Barre de recherche + filtres de date
-        var filterPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight,
-            BackColor = Theme.Background,
-            Margin = Padding.Empty
-        };
-
         _search.Width = Theme.Px(240);
         _search.Font = Theme.Body;
         _search.BorderStyle = BorderStyle.FixedSingle;
         _search.PlaceholderText = "Rechercher une réservation…";
-        _search.Anchor = AnchorStyles.Left;
         _search.TextChanged += (_, _) => ApplyFilter();
-        _search.Margin = new Padding(0, Theme.Px(9), Theme.Px(10), Theme.Px(9));
-        filterPanel.Controls.Add(_search);
 
         _dateFilter.Font = Theme.Body;
         _dateFilter.Value = DateTime.Now.Date;
-        _dateFilter.Margin = new Padding(0, Theme.Px(9), Theme.Px(6), Theme.Px(9));
-        filterPanel.Controls.Add(_dateFilter);
+        _dateFilter.Format = DateTimePickerFormat.Short;
 
         _filterButton.Text = "Filtrer";
         _filterButton.Font = Theme.BodyBold;
@@ -104,8 +78,6 @@ public sealed class ReservationsPage : UserControl
             _filterDate = _dateFilter.Value.Date;
             ApplyFilter();
         };
-        _filterButton.Margin = new Padding(0, Theme.Px(9), Theme.Px(6), Theme.Px(9));
-        filterPanel.Controls.Add(_filterButton);
 
         _clearFilterButton.Text = "Réinitialiser";
         _clearFilterButton.Font = Theme.BodyBold;
@@ -122,10 +94,7 @@ public sealed class ReservationsPage : UserControl
             _search.Clear();
             ApplyFilter();
         };
-        _clearFilterButton.Margin = new Padding(0, Theme.Px(9), 0, Theme.Px(9));
-        filterPanel.Controls.Add(_clearFilterButton);
 
-        // Boutons d'action
         _addButton.Text = "Nouvelle réservation";
         _addButton.Kind = ButtonKind.Primary;
         _addButton.Width = Theme.Px(200);
@@ -145,25 +114,13 @@ public sealed class ReservationsPage : UserControl
         _exportButton.Kind = ButtonKind.Secondary;
         _exportButton.Width = Theme.Px(110);
         _exportButton.Click += (_, _) => ExportData();
+    }
 
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight,
-            BackColor = Theme.Background,
-            Margin = Padding.Empty
-        };
-        foreach (var button in new[] { _addButton, _editButton, _cancelButton, _exportButton })
-        {
-            button.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
-            buttons.Controls.Add(button);
-        }
-
-        toolbar.Controls.Add(filterPanel, 0, 0);
-        toolbar.Controls.Add(buttons, 1, 0);
-        return toolbar;
+    private Control BuildToolbar()
+    {
+        return ToolbarBuilder.BuildTwoRow(
+            topRowControls: new Control[] { _search, _dateFilter, _filterButton, _clearFilterButton },
+            bottomRowButtons: new[] { _addButton, _editButton, _cancelButton, _exportButton });
     }
 
     private Control BuildGridCard()

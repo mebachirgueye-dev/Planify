@@ -52,9 +52,6 @@ public sealed class MainForm : Form
 
     private static NavSection[] BuildNavigation(BatimentService batiments, UtilisateurService utilisateurs, DatabaseInfoService databaseInfo, IDbContextFactory<PlanifyDbContext> dbFactory)
     {
-        static NavItem Soon(PageId id, string label, string subtitle, Role minimumRole = Role.Utilisateur) =>
-            new(id, label, subtitle, () => new PlaceholderPage(label), minimumRole);
-
         // Services pour Phase 2b et 3
         var equipements = new EquipementService(dbFactory);
         var salles = new SalleService(dbFactory);
@@ -92,7 +89,8 @@ public sealed class MainForm : Form
                     () => new UtilisateursPage(utilisateurs), Role.Administrateur),
                 new NavItem(PageId.Parametres, "Paramètres", "Sauvegardes, restauration et préférences",
                     () => new ParametresPage(new BackupService(dbFactory)), Role.Administrateur),
-                Soon(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports", Role.Gestionnaire)
+                new NavItem(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports",
+                    () => new RapportsPage(salles, reservations, cours, batiments, utilisateurs, equipements), Role.Gestionnaire)
             })
         };
     }
