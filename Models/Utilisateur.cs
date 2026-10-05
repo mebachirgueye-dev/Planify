@@ -50,7 +50,7 @@ public class Utilisateur
 
     public StatutUtilisateur Statut { get; set; } = StatutUtilisateur.Actif;
 
-    /// <summary>Nom complet (ex. : « Jean Dupont »), pour l'affichage. Non stocké en base.</summary>
-    [NotMapped]
+    /// <summary>Nom complet (ex. : « Jean Dupont »), pour l'affichage.
+    /// Propriété calculée (sans accesseur set) : EF Core ne la stocke pas en base.</summary>
     public string NomComplet => $"{Prenom} {Nom}".Trim();
 }

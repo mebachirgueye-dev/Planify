@@ -8,7 +8,7 @@ namespace Planify.Services;
 /// </summary>
 public sealed class Session
 {
-    private static Session? _current;
+    private static Utilisateur? _current;
 
     /// <summary>Utilisateur actuellement connecté, ou <c>null</c> si personne n'est connecté.</summary>
     public static Utilisateur? Current => _current;
