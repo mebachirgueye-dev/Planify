@@ -3,6 +3,7 @@ using Planify.Forms;
 using Planify.Helpers;
 using Planify.Models;
 using Planify.Services;
+using System.IO;
 
 namespace Planify.Pages;
 
@@ -22,6 +23,7 @@ public sealed class SallesPage : UserControl
     private readonly ThemedButton _addButton = new();
     private readonly ThemedButton _editButton = new();
     private readonly ThemedButton _deleteButton = new();
+    private readonly ThemedButton _exportButton = new();
 
     private List<Salle> _all = new();
 
@@ -80,6 +82,11 @@ public sealed class SallesPage : UserControl
         _deleteButton.Width = Theme.Px(120);
         _deleteButton.Click += (_, _) => DeleteSelected();
 
+        _exportButton.Text = "Exporter";
+        _exportButton.Kind = ButtonKind.Secondary;
+        _exportButton.Width = Theme.Px(110);
+        _exportButton.Click += (_, _) => ExportData();
+
         var buttons = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -89,7 +96,7 @@ public sealed class SallesPage : UserControl
             BackColor = Theme.Background,
             Margin = Padding.Empty
         };
-        foreach (var button in new[] { _addButton, _editButton, _deleteButton })
+        foreach (var button in new[] { _addButton, _editButton, _deleteButton, _exportButton })
         {
             button.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
             buttons.Controls.Add(button);
@@ -245,9 +252,39 @@ public sealed class SallesPage : UserControl
             _service.Delete(selected.Id);
             LoadData();
         }
-        catch (BusinessRuleException ex)
+catch (BusinessRuleException ex)
+            {
+                Dialogs.Warning(ex.Message, FindForm());
+            }
+        }
+
+        private void ExportData()
         {
-            Dialogs.Warning(ex.Message, FindForm());
+            using var dialog = new ExportDialog(ExporterFactory.GetAll());
+            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
+                return;
+
+            var exporter = dialog.SelectedExporter;
+            using var saveDialog = new SaveFileDialog
+            {
+                Filter = exporter.FileFilter,
+                DefaultExt = exporter.FileExtension,
+                FileName = $"Salles_{DateTime.Now:yyyyMMdd}{exporter.FileExtension}"
+            };
+
+            if (saveDialog.ShowDialog(FindForm()) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var data = _grid.DataSource as List<Salle> ?? _all;
+                exporter.ExportAsync(data, saveDialog.FileName).GetAwaiter().GetResult();
+                Dialogs.Info($"Export réussi :\n{saveDialog.FileName}", this);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("Export salles", ex);
+                Dialogs.Error($"Erreur lors de l'export : {ex.Message}", this);
+            }
         }
     }
-}

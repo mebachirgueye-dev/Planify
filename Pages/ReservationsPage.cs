@@ -3,6 +3,7 @@ using Planify.Forms;
 using Planify.Helpers;
 using Planify.Models;
 using Planify.Services;
+using System.IO;
 
 namespace Planify.Pages;
 
@@ -25,6 +26,7 @@ public sealed class ReservationsPage : UserControl
     private readonly ThemedButton _addButton = new();
     private readonly ThemedButton _editButton = new();
     private readonly ThemedButton _cancelButton = new();
+    private readonly ThemedButton _exportButton = new();
 
     private List<Reservation> _all = new();
     private DateTime? _filterDate;
@@ -139,6 +141,11 @@ public sealed class ReservationsPage : UserControl
         _cancelButton.Width = Theme.Px(110);
         _cancelButton.Click += (_, _) => CancelSelected();
 
+        _exportButton.Text = "Exporter";
+        _exportButton.Kind = ButtonKind.Secondary;
+        _exportButton.Width = Theme.Px(110);
+        _exportButton.Click += (_, _) => ExportData();
+
         var buttons = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -148,7 +155,7 @@ public sealed class ReservationsPage : UserControl
             BackColor = Theme.Background,
             Margin = Padding.Empty
         };
-        foreach (var button in new[] { _addButton, _editButton, _cancelButton })
+        foreach (var button in new[] { _addButton, _editButton, _cancelButton, _exportButton })
         {
             button.Margin = new Padding(Theme.Px(10), Theme.Px(9), 0, Theme.Px(9));
             buttons.Controls.Add(button);
@@ -313,9 +320,39 @@ public sealed class ReservationsPage : UserControl
             _service.Cancel(selected.Id);
             LoadData();
         }
-        catch (BusinessRuleException ex)
+catch (BusinessRuleException ex)
+            {
+                Dialogs.Warning(ex.Message, FindForm());
+            }
+        }
+
+        private void ExportData()
         {
-            Dialogs.Warning(ex.Message, FindForm());
+            using var dialog = new ExportDialog(ExporterFactory.GetAll());
+            if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
+                return;
+
+            var exporter = dialog.SelectedExporter;
+            using var saveDialog = new SaveFileDialog
+            {
+                Filter = exporter.FileFilter,
+                DefaultExt = exporter.FileExtension,
+                FileName = $"Reservations_{DateTime.Now:yyyyMMdd}{exporter.FileExtension}"
+            };
+
+            if (saveDialog.ShowDialog(FindForm()) != DialogResult.OK)
+                return;
+
+            try
+            {
+                var data = _grid.DataSource as List<Reservation> ?? _all;
+                exporter.ExportAsync(data, saveDialog.FileName).GetAwaiter().GetResult();
+                Dialogs.Info($"Export réussi :\n{saveDialog.FileName}", this);
+            }
+            catch (Exception ex)
+            {
+                AppLog.Error("Export réservations", ex);
+                Dialogs.Error($"Erreur lors de l'export : {ex.Message}", this);
+            }
         }
     }
-}

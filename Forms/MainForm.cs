@@ -72,13 +72,15 @@ public sealed class MainForm : Form
             {
                 new NavItem(PageId.Salles, "Salles", "Gérez les salles et leurs équipements",
                     () => new SallesPage(salles, batiments, equipements), Role.Gestionnaire),
+                new NavItem(PageId.RechercheSalles, "Recherche salles", "Trouvez une salle selon capacité, équipements, disponibilité",
+                    () => new RechercheSallesPage(salles, batiments, equipements), Role.Gestionnaire),
                 new NavItem(PageId.Batiments, "Bâtiments", "Gérez les bâtiments de votre établissement",
                     () => new BatimentsPage(batiments), Role.Gestionnaire)
             }),
             new NavSection("PLANIFICATION", new[]
             {
-                new NavItem(PageId.Planning, "Planning", "Consultez l'occupation des salles par jour ou par semaine",
-                    () => new PlanningPage(reservations, salles)),
+                new NavItem(PageId.Planning, "Planning", "Consultez l'occupation des salles par jour, semaine ou mois",
+                    () => new PlanningPage(reservations, salles, cours)),
                 new NavItem(PageId.Reservations, "Réservations", "Créez et suivez les réservations de salles",
                     () => new ReservationsPage(reservations, salles, utilisateurs)),
                 new NavItem(PageId.Evenements, "Cours / Événements", "Organisez les cours et les événements",
@@ -88,8 +90,9 @@ public sealed class MainForm : Form
             {
                 new NavItem(PageId.Utilisateurs, "Utilisateurs", "Gérez les comptes et les rôles",
                     () => new UtilisateursPage(utilisateurs), Role.Administrateur),
-                Soon(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports", Role.Gestionnaire),
-                Soon(PageId.Parametres, "Paramètres", "Préférences, sauvegardes et restauration", Role.Administrateur)
+                new NavItem(PageId.Parametres, "Paramètres", "Sauvegardes, restauration et préférences",
+                    () => new ParametresPage(new BackupService(dbFactory)), Role.Administrateur),
+                Soon(PageId.Rapports, "Rapports", "Statistiques d'utilisation et exports", Role.Gestionnaire)
             })
         };
     }

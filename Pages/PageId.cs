@@ -5,6 +5,7 @@ public enum PageId
 {
     Dashboard,
     Salles,
+    RechercheSalles,
     Batiments,
     Planning,
     Reservations,
