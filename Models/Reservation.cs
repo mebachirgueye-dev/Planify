@@ -49,7 +49,7 @@ public class Reservation
     // --- Propriétés calculées pour l'affichage et la logique ---
 
     /// <summary>Plage horaire sous forme lisible (ex. : "14:00 - 16:30").</summary>
-    public string PlageHoraire => $"{HeureDebut:HH}:{HeureDebut:mm} - {HeureFin:HH}:{HeureFin:mm}";
+    public string PlageHoraire => $"{HeureDebut:hh\\:mm} - {HeureFin:hh\\:mm}";
 
     /// <summary>Horodatage complet (date + heure début + fin, ex. : "15/10 14:00-16:30").</summary>
     public string DateHeure =>

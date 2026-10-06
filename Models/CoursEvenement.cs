@@ -36,6 +36,6 @@ public class CoursEvenement
 
     public DateTime DateCreation { get; set; }
 
-    public string PlageHoraire => $"{HeureDebut:HH}:{HeureDebut:mm} - {HeureFin:HH}:{HeureFin:mm}";
+    public string PlageHoraire => $"{HeureDebut:hh\\:mm} - {HeureFin:hh\\:mm}";
     public string DateHeure => $"{Date:dd/MM/yyyy} {PlageHoraire}";
 }

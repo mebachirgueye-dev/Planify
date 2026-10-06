@@ -2,7 +2,7 @@ using Planify.Controls;
 using Planify.Helpers;
 using Planify.Models;
 using Planify.Services;
-using System.Dynamic;
+using System.Data;
 
 namespace Planify.Pages;
 
@@ -298,7 +298,14 @@ public sealed class PlanningPage : UserControl
             var data = GetDataForView();
             _grid.DataSource = data;
 
-            bool hasRows = data.Count > 0;
+            bool hasRows;
+            if (data is DataTable dt)
+                hasRows = dt.Rows.Count > 0;
+            else if (data is System.Collections.ICollection coll)
+                hasRows = coll.Count > 0;
+            else
+                hasRows = false;
+
             _grid.Visible = hasRows;
             _emptyLabel.Visible = !hasRows;
             _emptyLabel.Text = GetEmptyMessage();
@@ -383,7 +390,7 @@ public sealed class PlanningPage : UserControl
         _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = "Total", HeaderText = "Total", FillWeight = 10 });
     }
 
-    private List<object> GetDataForView()
+    private object GetDataForView()
     {
         int selectedSalleId = _salleFilter.SelectedValue is int id ? id : 0;
 
@@ -396,7 +403,7 @@ public sealed class PlanningPage : UserControl
         };
     }
 
-    private List<object> GetDayData(int salleId)
+    private object GetDayData(int salleId)
     {
         var reservations = _reservationService.GetByDate(_currentDate);
         var cours = _coursService.GetByDate(_currentDate);
@@ -446,7 +453,7 @@ public sealed class PlanningPage : UserControl
         return result.Cast<object>().ToList();
     }
 
-    private List<object> GetWeekData(int salleId)
+    private DataTable GetWeekData(int salleId)
     {
         // Trouver le lundi de la semaine
         var startOfWeek = _currentDate.AddDays(-(int)_currentDate.DayOfWeek + (int)DayOfWeek.Monday);
@@ -467,13 +474,17 @@ public sealed class PlanningPage : UserControl
         }
 
         var targetSalles = salleId > 0 ? _salles.Where(s => s.Id == salleId).ToList() : _salles;
-        var result = new List<object>();
+
+        var dt = new DataTable();
+        dt.Columns.Add("Salle", typeof(string));
+        var days = new[] { "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche" };
+        foreach (var day in days)
+            dt.Columns.Add(day, typeof(string));
 
         foreach (var salle in targetSalles)
         {
-            dynamic row = new ExpandoObject();
-            row.Salle = salle.Numero;
-            var days = new[] { "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche" };
+            var row = dt.NewRow();
+            row["Salle"] = salle.Numero;
 
             foreach (var day in days)
             {
@@ -487,16 +498,15 @@ public sealed class PlanningPage : UserControl
                 foreach (var c in dayCours)
                     items.Add($"{c.PlageHoraire} {c.Nom} ({c.Responsable?.NomComplet})");
 
-                var rowDict = (IDictionary<string, object>)row;
-                rowDict[day] = items.Count > 0 ? string.Join("; ", items) : "—";
+                row[day] = items.Count > 0 ? string.Join("; ", items) : "—";
             }
-            result.Add(row);
+            dt.Rows.Add(row);
         }
 
-        return result;
+        return dt;
     }
 
-    private List<object> GetMonthData(int salleId)
+    private DataTable GetMonthData(int salleId)
     {
         var startOfMonth = new DateTime(_currentDate.Year, _currentDate.Month, 1);
         var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
@@ -517,20 +527,24 @@ public sealed class PlanningPage : UserControl
         }
 
         var targetSalles = salleId > 0 ? _salles.Where(s => s.Id == salleId).ToList() : _salles;
-        var result = new List<object>();
+
+        var dt = new DataTable();
+        dt.Columns.Add("Salle", typeof(string));
+        for (int w = 1; w <= 5; w++)
+            dt.Columns.Add($"Semaine{w}", typeof(string));
+        dt.Columns.Add("Total", typeof(string));
 
         foreach (var salle in targetSalles)
         {
-            dynamic row = new ExpandoObject();
-            var rowDict = (IDictionary<string, object>)row;
-            rowDict["Salle"] = salle.Numero;
+            var row = dt.NewRow();
+            row["Salle"] = salle.Numero;
             int total = 0;
 
             for (int w = 1; w <= 5; w++)
             {
                 var weekStart = startOfMonth.AddDays((w - 1) * 7);
                 var weekEnd = weekStart.AddDays(6);
-                if (weekStart > endOfMonth) { rowDict[$"Semaine{w}"] = "—"; continue; }
+                if (weekStart > endOfMonth) { row[$"Semaine{w}"] = "—"; continue; }
                 if (weekEnd > endOfMonth) weekEnd = endOfMonth;
 
                 var weekReservations = reservations.Where(r => r.SalleId == salle.Id && r.Date >= weekStart && r.Date <= weekEnd).Count();
@@ -538,13 +552,13 @@ public sealed class PlanningPage : UserControl
                 int weekTotal = weekReservations + weekCours;
                 total += weekTotal;
 
-                rowDict[$"Semaine{w}"] = weekTotal > 0 ? $"{weekTotal} créneaux" : "—";
+                row[$"Semaine{w}"] = weekTotal > 0 ? $"{weekTotal} créneaux" : "—";
             }
-            rowDict["Total"] = total > 0 ? $"{total} créneaux" : "—";
-            result.Add(row);
+            row["Total"] = total > 0 ? $"{total} créneaux" : "—";
+            dt.Rows.Add(row);
         }
 
-        return result;
+        return dt;
     }
 
     private string GetEmptyMessage()
