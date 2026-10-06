@@ -2,6 +2,7 @@ using Planify.Controls;
 using Planify.Helpers;
 using Planify.Models;
 using Planify.Services;
+using System.Dynamic;
 
 namespace Planify.Pages;
 
@@ -470,7 +471,8 @@ public sealed class PlanningPage : UserControl
 
         foreach (var salle in targetSalles)
         {
-            var row = new Dictionary<string, object> { ["Salle"] = salle.Numero };
+            dynamic row = new ExpandoObject();
+            row.Salle = salle.Numero;
             var days = new[] { "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche" };
 
             foreach (var day in days)
@@ -485,12 +487,13 @@ public sealed class PlanningPage : UserControl
                 foreach (var c in dayCours)
                     items.Add($"{c.PlageHoraire} {c.Nom} ({c.Responsable?.NomComplet})");
 
-                row[day] = items.Count > 0 ? string.Join("; ", items) : "—";
+                var rowDict = (IDictionary<string, object>)row;
+                rowDict[day] = items.Count > 0 ? string.Join("; ", items) : "—";
             }
             result.Add(row);
         }
 
-        return result.Cast<object>().ToList();
+        return result;
     }
 
     private List<object> GetMonthData(int salleId)
@@ -518,14 +521,16 @@ public sealed class PlanningPage : UserControl
 
         foreach (var salle in targetSalles)
         {
-            var row = new Dictionary<string, object> { ["Salle"] = salle.Numero };
+            dynamic row = new ExpandoObject();
+            var rowDict = (IDictionary<string, object>)row;
+            rowDict["Salle"] = salle.Numero;
             int total = 0;
 
             for (int w = 1; w <= 5; w++)
             {
                 var weekStart = startOfMonth.AddDays((w - 1) * 7);
                 var weekEnd = weekStart.AddDays(6);
-                if (weekStart > endOfMonth) { row[$"Semaine{w}"] = "—"; continue; }
+                if (weekStart > endOfMonth) { rowDict[$"Semaine{w}"] = "—"; continue; }
                 if (weekEnd > endOfMonth) weekEnd = endOfMonth;
 
                 var weekReservations = reservations.Where(r => r.SalleId == salle.Id && r.Date >= weekStart && r.Date <= weekEnd).Count();
@@ -533,13 +538,13 @@ public sealed class PlanningPage : UserControl
                 int weekTotal = weekReservations + weekCours;
                 total += weekTotal;
 
-                row[$"Semaine{w}"] = weekTotal > 0 ? $"{weekTotal} créneaux" : "—";
+                rowDict[$"Semaine{w}"] = weekTotal > 0 ? $"{weekTotal} créneaux" : "—";
             }
-            row["Total"] = total > 0 ? $"{total} créneaux" : "—";
+            rowDict["Total"] = total > 0 ? $"{total} créneaux" : "—";
             result.Add(row);
         }
 
-        return result.Cast<object>().ToList();
+        return result;
     }
 
     private string GetEmptyMessage()
