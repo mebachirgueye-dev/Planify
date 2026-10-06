@@ -3,7 +3,7 @@ using Planify.Helpers;
 
 namespace Planify.Controls;
 
-/// <summary>Carte statistique du Dashboard : titre, grande valeur, légende et pastille de couleur.</summary>
+/// <summary>Carte statistique du Dashboard : titre, grande valeur, légende et barre d'accent latérale.</summary>
 public class StatCard : Control
 {
     private const TextFormatFlags TextFlags =
@@ -20,6 +20,7 @@ public class StatCard : Control
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         Size = new Size(Theme.Px(240), Theme.Px(124));
+        Margin = new Padding(0, 0, Theme.Spacing(8), Theme.Spacing(8));
     }
 
     public string Title { get => _title; set { _title = value; Invalidate(); } }
@@ -34,27 +35,42 @@ public class StatCard : Control
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
         var rect = new Rectangle(0, 0, Width - 1, Height - 1);
-        using (var path = GraphicsHelper.RoundedRectangle(rect, Theme.Px(12)))
+        var radius = Theme.Radius(Theme.RadiusCard);
+        var accentWidth = Theme.Px(5);
+
+        // Ombre
+        using (var shadowPath = GraphicsHelper.RoundedRectangle(
+            new Rectangle(rect.X + Theme.Radius(2), rect.Y + Theme.Radius(2), rect.Width - Theme.Radius(4), rect.Height - Theme.Radius(4)), radius))
+        using (var shadowBrush = new SolidBrush(Color.FromArgb(20, Theme.ShadowColor)))
+        {
+            g.FillPath(shadowBrush, shadowPath);
+        }
+
+        // Fond carte
+        using (var path = GraphicsHelper.RoundedRectangle(rect, radius))
         using (var fill = new SolidBrush(Theme.Surface))
-        using (var pen = new Pen(Theme.Border))
+        using (var pen = new Pen(Theme.BorderLight))
         {
             g.FillPath(fill, path);
             g.DrawPath(pen, path);
         }
 
-        int pad = Theme.Px(20);
-        int textWidth = Width - 2 * pad;
+        // Barre d'accent verticale à gauche
+        using (var accentPath = GraphicsHelper.RoundedRectangle(
+            new Rectangle(0, 0, accentWidth, Height), radius))
+        using (var accentBrush = new SolidBrush(_accentColor))
+        {
+            g.FillPath(accentBrush, accentPath);
+        }
 
-        // Pastille de couleur en haut à droite
-        int dot = Theme.Px(10);
-        using (var dotBrush = new SolidBrush(_accentColor))
-            g.FillEllipse(dotBrush, Width - pad - dot, pad, dot, dot);
+        int pad = Theme.Spacing(20);
+        int textWidth = Width - pad - accentWidth - Theme.Spacing(12);
 
-        TextRenderer.DrawText(g, _title, Theme.Small, new Rectangle(pad, Theme.Px(16), textWidth - dot - Theme.Px(8), Theme.Px(20)),
+        TextRenderer.DrawText(g, _title, Theme.Small, new Rectangle(pad + accentWidth + Theme.Spacing(12), Theme.Px(14), textWidth, Theme.Px(20)),
             Theme.TextMuted, TextFlags);
-        TextRenderer.DrawText(g, _value, Theme.BigNumber, new Rectangle(pad, Theme.Px(38), textWidth, Theme.Px(48)),
+        TextRenderer.DrawText(g, _value, Theme.BigNumber, new Rectangle(pad + accentWidth + Theme.Spacing(12), Theme.Px(34), textWidth, Theme.Px(50)),
             Theme.Navy, TextFlags);
-        TextRenderer.DrawText(g, _caption, Theme.Small, new Rectangle(pad, Height - Theme.Px(34), textWidth, Theme.Px(20)),
+        TextRenderer.DrawText(g, _caption, Theme.Small, new Rectangle(pad + accentWidth + Theme.Spacing(12), Height - Theme.Px(36), textWidth, Theme.Px(20)),
             Theme.TextMuted, TextFlags);
     }
 }

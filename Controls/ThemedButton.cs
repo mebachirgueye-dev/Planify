@@ -10,7 +10,9 @@ public enum ButtonKind
     /// <summary>Action secondaire : fond blanc, bordure grise.</summary>
     Secondary,
     /// <summary>Action destructrice : texte rouge.</summary>
-    Danger
+    Danger,
+    /// <summary>Action fantôme : sans fond, texte coloré.</summary>
+    Ghost
 }
 
 /// <summary>Bouton plat aux coins arrondis, aux couleurs de Planify.</summary>
@@ -26,7 +28,7 @@ public class ThemedButton : Button
         FlatAppearance.BorderSize = 0;
         Cursor = Cursors.Hand;
         Font = Theme.BodyBold;
-        Height = Theme.Px(38);
+        Height = Theme.Px(40);
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
     }
 
@@ -51,21 +53,36 @@ public class ThemedButton : Button
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
         Color fill, border, text;
+        var radius = Theme.Radius(Theme.RadiusSmall);
+
         switch (_kind)
         {
             case ButtonKind.Primary:
-                fill = _hover || _pressed ? Theme.PrimaryHover : Theme.Primary;
+                if (_pressed) fill = Theme.PrimaryPressed;
+                else if (_hover) fill = Theme.PrimaryHover;
+                else fill = Theme.Primary;
                 border = fill;
                 text = Color.White;
                 break;
             case ButtonKind.Danger:
-                fill = _hover || _pressed ? Color.FromArgb(254, 242, 242) : Theme.Surface;
-                border = Color.FromArgb(252, 165, 165);
+                if (_pressed) fill = Theme.DangerLight;
+                else if (_hover) fill = Color.FromArgb(255, 245, 245);
+                else fill = Theme.Surface;
+                border = _hover || _pressed ? Theme.Danger : Theme.BorderLight;
                 text = Theme.Danger;
                 break;
-            default:
-                fill = _hover || _pressed ? Theme.HoverBackground : Theme.Surface;
-                border = Theme.Border;
+            case ButtonKind.Ghost:
+                if (_pressed) fill = Theme.HoverBackground;
+                else if (_hover) fill = Theme.PrimarySoft;
+                else fill = Color.Transparent;
+                border = Color.Transparent;
+                text = _hover || _pressed ? Theme.Primary : Theme.TextSecondary;
+                break;
+            default: // Secondary
+                if (_pressed) fill = Theme.Background;
+                else if (_hover) fill = Theme.SurfaceHover;
+                else fill = Theme.Surface;
+                border = _hover ? Theme.PrimaryLight : Theme.BorderLight;
                 text = Theme.Navy;
                 break;
         }
@@ -73,20 +90,27 @@ public class ThemedButton : Button
         if (!Enabled)
         {
             fill = _kind == ButtonKind.Primary ? Theme.PrimaryLight : Theme.Background;
-            border = Theme.Border;
+            border = Theme.BorderLight;
             text = Theme.TextMuted;
         }
 
         var rect = new Rectangle(0, 0, Width - 1, Height - 1);
-        using (var path = GraphicsHelper.RoundedRectangle(rect, Theme.Px(8)))
-        using (var brush = new SolidBrush(fill))
-        using (var pen = new Pen(border))
+        using (var path = GraphicsHelper.RoundedRectangle(rect, radius))
         {
-            g.FillPath(brush, path);
-            g.DrawPath(pen, path);
+            // Fond
+            using (var brush = new SolidBrush(fill))
+                g.FillPath(brush, path);
+
+            // Bordure
+            if (border != Color.Transparent)
+                using (var pen = new Pen(border, _kind == ButtonKind.Ghost ? 0 : 1))
+                    g.DrawPath(pen, path);
         }
 
-        TextRenderer.DrawText(g, Text, Font, ClientRectangle, text,
+        // Texte
+        var textRect = ClientRectangle;
+        if (_pressed) textRect.Offset(1, 1); // léger décalage au clic
+        TextRenderer.DrawText(g, Text, Font, textRect, text,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter |
             TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
     }

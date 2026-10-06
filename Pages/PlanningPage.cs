@@ -62,13 +62,14 @@ public sealed class PlanningPage : UserControl
         var toolbar = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
-            Height = Theme.Px(56),
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
             ColumnCount = 1,
             RowCount = 1,
             BackColor = Theme.Background
         };
         toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        toolbar.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        toolbar.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var panel = new FlowLayoutPanel
         {
@@ -253,6 +254,7 @@ public sealed class PlanningPage : UserControl
         _salleFilter.DisplayMember = "Text";
         _salleFilter.ValueMember = "Value";
         _salleFilter.SelectedIndex = 0;
+        _salleFilter.DropDownWidth = Theme.Px(400);
 
         RefreshGrid();
     }

@@ -3,7 +3,7 @@ using Planify.Helpers;
 
 namespace Planify.Controls;
 
-/// <summary>Entrée du menu latéral. L'entrée active est surlignée en bleu clair avec une barre d'accent.</summary>
+/// <summary>Entrée du menu latéral. L'entrée active est surlignée avec barre d'accent à gauche.</summary>
 public class NavButton : Button
 {
     private bool _hover;
@@ -15,7 +15,7 @@ public class NavButton : Button
         FlatAppearance.BorderSize = 0;
         Cursor = Cursors.Hand;
         Font = Theme.Body;
-        Height = Theme.Px(42);
+        Height = Theme.Px(44);
         TextAlign = ContentAlignment.MiddleLeft;
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
     }
@@ -37,24 +37,35 @@ public class NavButton : Button
         g.Clear(Parent?.BackColor ?? Theme.Surface);
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
-        var area = new Rectangle(Theme.Px(12), Theme.Px(2), Width - Theme.Px(24), Height - Theme.Px(4));
+        var padding = Theme.Px(16);
+        var area = new Rectangle(padding, Theme.Px(4), Width - 2 * padding, Height - Theme.Px(8));
+        var radius = Theme.Radius(Theme.RadiusSmall);
 
+        // Fond au survol/actif
         if (_isActive || _hover)
         {
-            using var path = GraphicsHelper.RoundedRectangle(area, Theme.Px(8));
+            using var path = GraphicsHelper.RoundedRectangle(area, radius);
             using var brush = new SolidBrush(_isActive ? Theme.PrimarySoft : Theme.HoverBackground);
             g.FillPath(brush, path);
         }
 
+        // Barre d'accent à gauche quand actif
         if (_isActive)
         {
-            var bar = new Rectangle(area.X + Theme.Px(4), area.Y + (area.Height - Theme.Px(20)) / 2, Theme.Px(4), Theme.Px(20));
+            var barWidth = Theme.Px(4);
+            var barHeight = Theme.Px(28);
+            var bar = new Rectangle(
+                area.X,
+                area.Y + (area.Height - barHeight) / 2,
+                barWidth, barHeight);
             using var barPath = GraphicsHelper.RoundedRectangle(bar, Theme.Px(2));
             using var barBrush = new SolidBrush(Theme.Primary);
             g.FillPath(barBrush, barPath);
         }
 
-        var textArea = new Rectangle(area.X + Theme.Px(20), area.Y, area.Width - Theme.Px(28), area.Height);
+        // Texte
+        var textX = area.X + (_isActive ? Theme.Px(16) : Theme.Px(12)) + Theme.Px(4);
+        var textArea = new Rectangle(textX, area.Y, area.Width - Theme.Px(20), area.Height);
         TextRenderer.DrawText(g, Text, _isActive ? Theme.BodyBold : Theme.Body, textArea,
             _isActive ? Theme.Primary : Theme.Navy,
             TextFormatFlags.Left | TextFormatFlags.VerticalCenter |

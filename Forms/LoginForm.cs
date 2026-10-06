@@ -1,6 +1,7 @@
 using Planify.Controls;
 using Planify.Helpers;
 using Planify.Services;
+using System.Drawing.Drawing2D;
 
 namespace Planify.Forms;
 
@@ -23,98 +24,155 @@ public sealed class LoginForm : Form
         Text = "Connexion à Planify";
         Icon = AppResources.LoadIcon("planify.ico");
         Font = Theme.Body;
-        BackColor = Theme.Surface;
+        BackColor = Theme.Background;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = true;
         StartPosition = FormStartPosition.CenterScreen;
+        AutoScaleMode = AutoScaleMode.Dpi;
 
         BuildLayout();
     }
 
     private void BuildLayout()
     {
-        int width = Theme.Px(400);
-        int margin = Theme.Px(36);
-        int fieldWidth = width - 2 * margin;
+        int cardWidth = Theme.Px(420);
+        int cardHeight = Theme.Px(520);
+        int margin = Theme.Spacing(24);
+        int fieldWidth = cardWidth - 2 * margin;
 
-        // En-tête : logo + titre
-        var logo = AppResources.LoadImage("logo.png", Theme.Px(56));
+        // Centrer la carte dans la fenêtre
+        ClientSize = new Size(cardWidth + Theme.Spacing(48), cardHeight + Theme.Spacing(48));
+
+        // Carte centrale
+        var card = new Panel
+        {
+            Size = new Size(cardWidth, cardHeight),
+            Location = new Point(Theme.Spacing(24), Theme.Spacing(24)),
+            BackColor = Theme.Surface
+        };
+        card.Paint += (s, e) =>
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+            var radius = Theme.Radius(Theme.RadiusLarge);
+
+            // Ombre
+            using (var shadowPath = GraphicsHelper.RoundedRectangle(
+                new Rectangle(Theme.Radius(4), Theme.Radius(4), card.Width - Theme.Radius(8), card.Height - Theme.Radius(8)), radius))
+            using (var shadowBrush = new SolidBrush(Color.FromArgb(30, Theme.ShadowColor)))
+                g.FillPath(shadowBrush, shadowPath);
+
+            // Carte
+            using (var path = GraphicsHelper.RoundedRectangle(rect, radius))
+            using (var fill = new SolidBrush(Theme.Surface))
+            using (var pen = new Pen(Theme.BorderLight))
+            {
+                g.FillPath(fill, path);
+                g.DrawPath(pen, path);
+            }
+        };
+
+        // Contenu de la carte
+        int y = Theme.Spacing(32);
+
+        // Logo
+        var logo = AppResources.LoadImage("logo.png", Theme.Px(64));
         var logoBox = new PictureBox
         {
             Image = logo,
             SizeMode = PictureBoxSizeMode.AutoSize,
-            Location = new Point((width - logo.Width) / 2, Theme.Px(36)),
-            BackColor = Theme.Surface
+            Location = new Point((cardWidth - logo.Width) / 2, y),
+            BackColor = Color.Transparent
         };
+        card.Controls.Add(logoBox);
+        y += logo.Height + Theme.Spacing(16);
 
+        // Titre
         var title = new Label
         {
             Text = "Connexion",
-            Font = Theme.Title,
+            Font = Theme.TitleLarge,
             ForeColor = Theme.Navy,
-            AutoSize = true,
-            Location = new Point((width - Theme.Px(150)) / 2, logoBox.Bottom + Theme.Px(14))
+            AutoSize = true
         };
+        title.Location = new Point((cardWidth - Theme.MeasureString(title.Text, title.Font).Width) / 2, y);
+        card.Controls.Add(title);
+        y += title.Height + Theme.Spacing(4);
 
+        // Sous-titre
         var subtitle = new Label
         {
             Text = "Saisissez vos identifiants pour accéder à Planify.",
             Font = Theme.Body,
             ForeColor = Theme.TextMuted,
-            AutoSize = true,
-            Location = new Point((width - Theme.Px(280)) / 2, title.Bottom + Theme.Px(6))
+            AutoSize = true
         };
+        subtitle.Location = new Point((cardWidth - Theme.MeasureString(subtitle.Text, subtitle.Font).Width) / 2, y);
+        card.Controls.Add(subtitle);
+        y += subtitle.Height + Theme.Spacing(28);
 
-        int y = subtitle.Bottom + Theme.Px(28);
-
+        // Champ Email
         _email.Width = fieldWidth;
         _email.Font = Theme.Body;
         _email.BorderStyle = BorderStyle.FixedSingle;
         _email.PlaceholderText = "Adresse e-mail";
-        AddField("Adresse e-mail", _email, fieldWidth, margin, ref y);
+        AddField(card, "Adresse e-mail", _email, margin, ref y);
 
+        // Champ Mot de passe
         _password.Width = fieldWidth;
         _password.Font = Theme.Body;
         _password.BorderStyle = BorderStyle.FixedSingle;
         _password.UseSystemPasswordChar = true;
         _password.PlaceholderText = "Mot de passe";
-        AddField("Mot de passe", _password, fieldWidth, margin, ref y);
+        AddField(card, "Mot de passe", _password, margin, ref y);
 
+        // Label erreur
         _errorLabel.AutoSize = true;
         _errorLabel.Font = Theme.Small;
         _errorLabel.ForeColor = Theme.Danger;
         _errorLabel.Location = new Point(margin, y);
         _errorLabel.Visible = false;
-        y += Theme.Px(20);
+        _errorLabel.MaximumSize = new Size(fieldWidth, 0);
+        card.Controls.Add(_errorLabel);
+        y += Theme.Spacing(24);
 
+        // Bouton connexion
         var connect = new ThemedButton
         {
             Text = "Se connecter",
             Kind = ButtonKind.Primary,
             Width = fieldWidth,
+            Height = Theme.Px(44),
             Location = new Point(margin, y)
         };
         connect.Click += OnConnect;
-        y += connect.Height + Theme.Px(28);
+        card.Controls.Add(connect);
+        y += connect.Height + Theme.Spacing(16);
 
-        Controls.Add(logoBox);
-        Controls.Add(title);
-        Controls.Add(subtitle);
-        Controls.Add(_email);
-        Controls.Add(_password);
-        Controls.Add(_errorLabel);
-        Controls.Add(connect);
+        // Lien mot de passe oublié (placeholder)
+        var forgotLink = new LinkLabel
+        {
+            Text = "Mot de passe oublié ?",
+            Font = Theme.Small,
+            LinkColor = Theme.Primary,
+            ActiveLinkColor = Theme.PrimaryHover,
+            VisitedLinkColor = Theme.Primary,
+            AutoSize = true,
+            Location = new Point((cardWidth - Theme.MeasureString("Mot de passe oublié ?", Theme.Small).Width) / 2, y)
+        };
+        card.Controls.Add(forgotLink);
+
+        Controls.Add(card);
 
         AcceptButton = connect;
         CancelButton = new ThemedButton { DialogResult = DialogResult.Cancel };
-
-        ClientSize = new Size(width, y);
     }
 
     /// <summary>Place un libellé suivi de son champ de saisie, puis descend le curseur vertical.</summary>
-    private void AddField(string label, Control input, int inputWidth, int x, ref int y)
+    private void AddField(Control parent, string label, Control input, int x, ref int y)
     {
         var caption = new Label
         {
@@ -124,12 +182,12 @@ public sealed class LoginForm : Form
             AutoSize = true,
             Location = new Point(x, y)
         };
-        Controls.Add(caption);
+        parent.Controls.Add(caption);
         y += Theme.Px(22);
 
         input.Location = new Point(x, y);
-        input.Width = inputWidth;
-        Controls.Add(input);
+        input.Width = input.Width;
+        parent.Controls.Add(input);
         y += input.Height + Theme.Px(16);
     }
 

@@ -146,6 +146,19 @@ public class ReservationService
                 $"sur cette plage horaire ({reservation.HeureDebut:HH}:{reservation.HeureDebut:mm} - " +
                 $"{reservation.HeureFin:HH}:{reservation.HeureFin:mm}).");
 
+        // Conflit 3 : Salle déjà occupée par un cours/événement
+        bool hasCoursConflict = db.CoursEvenements.Any(c =>
+            c.SalleId == reservation.SalleId
+            && c.Date == reservation.Date.Date
+            && c.Statut != StatutEvenement.Annule
+            && c.HeureDebut < reservation.HeureFin
+            && c.HeureFin > reservation.HeureDebut);
+        if (hasCoursConflict)
+            throw new BusinessRuleException(
+                $"Conflit détecté : la salle « {salle.Numero} » est affectée à un cours ou événement " +
+                $"sur cette plage horaire ({reservation.HeureDebut:HH}:{reservation.HeureDebut:mm} - " +
+                $"{reservation.HeureFin:HH}:{reservation.HeureFin:mm}).");
+
         // --- Enregistrement ---
         Reservation entity;
         if (reservation.Id == 0)

@@ -64,6 +64,8 @@ public sealed class UtilisateurEditForm : Form
         {
             "Actif", "Désactivé"
         });
+        _role.DropDownWidth = Theme.Px(200);
+        _statut.DropDownWidth = Theme.Px(150);
 
         BuildLayout();
 

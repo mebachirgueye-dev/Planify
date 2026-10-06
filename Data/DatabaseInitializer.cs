@@ -16,5 +16,8 @@ public static class DatabaseInitializer
 
         using var db = factory.CreateDbContext();
         db.Database.Migrate();
+
+        // Insérer des données d'exemple si la base est vide
+        DatabaseSeeder.SeedIfEmpty(factory);
     }
 }

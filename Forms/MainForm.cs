@@ -106,6 +106,7 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(Theme.Px(1280), Theme.Px(780));
         MinimumSize = new Size(Theme.Px(1000), Theme.Px(660));
+        AutoScaleMode = AutoScaleMode.Dpi; // Gestion DPI par le système
 
         // Zone de droite : bandeau de titre + page courante
         _pageHost.Dock = DockStyle.Fill;

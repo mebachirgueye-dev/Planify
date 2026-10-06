@@ -78,6 +78,10 @@ public sealed class CoursEvenementEditForm : Form
         foreach (var value in Enum.GetValues<StatutEvenement>())
             _statutCombo.Items.Add(value);
 
+        _salleCombo.DropDownWidth = Theme.Px(500);
+        _responsableCombo.DropDownWidth = Theme.Px(400);
+        _statutCombo.DropDownWidth = Theme.Px(200);
+
         if (_salleCombo.Items.Count > 0)
             _salleCombo.SelectedIndex = 0;
         if (_responsableCombo.Items.Count > 0)

@@ -18,4 +18,15 @@ public static class AppLog
             // Le journal ne doit jamais provoquer une nouvelle erreur.
         }
     }
+
+    public static void Info(string message)
+    {
+        try
+        {
+            Directory.CreateDirectory(AppPaths.LogDirectory);
+            File.AppendAllText(LogFile,
+                $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] INFO: {message}{Environment.NewLine}");
+        }
+        catch { }
+    }
 }

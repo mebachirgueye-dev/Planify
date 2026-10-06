@@ -82,6 +82,7 @@ public sealed class SalleEditForm : Form
         _batiment.DataSource = _batimentService.GetAll();
         _batiment.DisplayMember = nameof(Batiment.Nom);
         _batiment.ValueMember = nameof(Batiment.Id);
+        _batiment.DropDownWidth = Theme.Px(400);
 
         // Charger les équipements
         _equipements.DataSource = _equipementService.GetAll();
@@ -89,6 +90,7 @@ public sealed class SalleEditForm : Form
 
         // Charger les statuts
         _statut.DataSource = Enum.GetValues(typeof(StatutSalle));
+        _statut.DropDownWidth = Theme.Px(200);
     }
 
     private void BuildLayout()

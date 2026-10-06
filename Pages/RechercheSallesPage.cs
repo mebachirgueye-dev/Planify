@@ -270,6 +270,7 @@ public sealed class RechercheSallesPage : UserControl
         _batimentCombo.DisplayMember = nameof(Batiment.Nom);
         _batimentCombo.ValueMember = nameof(Batiment.Id);
         _batimentCombo.SelectedIndex = -1;
+        _batimentCombo.DropDownWidth = Theme.Px(400);
 
         // Équipements
         var equipements = _equipementService.GetAll();

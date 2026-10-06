@@ -77,11 +77,13 @@ public sealed class ReservationEditForm : Form
         _salle.DataSource = salles;
         _salle.DisplayMember = nameof(Salle.Numero);
         _salle.ValueMember = nameof(Salle.Id);
+        _salle.DropDownWidth = Theme.Px(400);
 
         // Charger les utilisateurs
         _utilisateur.DataSource = _utilisateurService.GetAll();
         _utilisateur.DisplayMember = nameof(Utilisateur.NomComplet);
         _utilisateur.ValueMember = nameof(Utilisateur.Id);
+        _utilisateur.DropDownWidth = Theme.Px(400);
     }
 
     private void BuildLayout()

@@ -2,6 +2,7 @@ using Planify.Controls;
 using Planify.Helpers;
 using Planify.Models;
 using Planify.Services;
+using System.Drawing.Drawing2D;
 
 namespace Planify.Forms;
 
@@ -27,118 +28,164 @@ public sealed class FirstRunForm : Form
         Text = "Premier lancement de Planify";
         Icon = AppResources.LoadIcon("planify.ico");
         Font = Theme.Body;
-        BackColor = Theme.Surface;
+        BackColor = Theme.Background;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = true;
         StartPosition = FormStartPosition.CenterScreen;
+        AutoScaleMode = AutoScaleMode.Dpi;
 
         BuildLayout();
     }
 
     private void BuildLayout()
     {
-        int width = Theme.Px(440);
-        int margin = Theme.Px(36);
-        int fieldWidth = width - 2 * margin;
+        int cardWidth = Theme.Px(460);
+        int margin = Theme.Spacing(24);
+        int fieldWidth = cardWidth - 2 * margin;
 
-        var logo = AppResources.LoadImage("logo.png", Theme.Px(48));
+        // Estimer la hauteur nécessaire
+        int estimatedHeight = Theme.Px(700);
+
+        ClientSize = new Size(cardWidth + Theme.Spacing(48), estimatedHeight + Theme.Spacing(48));
+
+        // Carte centrale
+        var card = new Panel
+        {
+            Size = new Size(cardWidth, estimatedHeight),
+            Location = new Point(Theme.Spacing(24), Theme.Spacing(24)),
+            BackColor = Theme.Surface,
+            AutoScroll = true
+        };
+        card.Paint += (s, e) =>
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            var rect = new Rectangle(0, 0, card.Width - 1, card.Height - 1);
+            var radius = Theme.Radius(Theme.RadiusLarge);
+
+            // Ombre
+            using (var shadowPath = GraphicsHelper.RoundedRectangle(
+                new Rectangle(Theme.Radius(4), Theme.Radius(4), card.Width - Theme.Radius(8), card.Height - Theme.Radius(8)), radius))
+            using (var shadowBrush = new SolidBrush(Color.FromArgb(30, Theme.ShadowColor)))
+                g.FillPath(shadowBrush, shadowPath);
+
+            // Carte
+            using (var path = GraphicsHelper.RoundedRectangle(rect, radius))
+            using (var fill = new SolidBrush(Theme.Surface))
+            using (var pen = new Pen(Theme.BorderLight))
+            {
+                g.FillPath(fill, path);
+                g.DrawPath(pen, path);
+            }
+        };
+
+        // Contenu de la carte
+        int y = Theme.Spacing(32);
+
+        // Logo
+        var logo = AppResources.LoadImage("logo.png", Theme.Px(56));
         var logoBox = new PictureBox
         {
             Image = logo,
             SizeMode = PictureBoxSizeMode.AutoSize,
-            Location = new Point((width - logo.Width) / 2, Theme.Px(32)),
-            BackColor = Theme.Surface
+            Location = new Point((cardWidth - logo.Width) / 2, y),
+            BackColor = Color.Transparent
         };
+        card.Controls.Add(logoBox);
+        y += logo.Height + Theme.Spacing(16);
 
+        // Titre
         var title = new Label
         {
             Text = "Création du compte administrateur",
-            Font = Theme.Title,
+            Font = Theme.TitleLarge,
             ForeColor = Theme.Navy,
-            AutoSize = true,
-            Location = new Point((width - Theme.Px(360)) / 2, logoBox.Bottom + Theme.Px(12))
+            AutoSize = true
         };
+        title.Location = new Point((cardWidth - Theme.MeasureString(title.Text, title.Font).Width) / 2, y);
+        card.Controls.Add(title);
+        y += title.Height + Theme.Spacing(4);
 
+        // Sous-titre
         var subtitle = new Label
         {
             Text = "Aucun compte n'existe encore. Créez le premier administrateur pour commencer.",
             Font = Theme.Body,
             ForeColor = Theme.TextMuted,
-            AutoSize = true,
-            Location = new Point((width - Theme.Px(380)) / 2, title.Bottom + Theme.Px(6))
+            AutoSize = true
         };
+        subtitle.Location = new Point((cardWidth - Theme.MeasureString(subtitle.Text, subtitle.Font).Width) / 2, y);
+        card.Controls.Add(subtitle);
+        y += subtitle.Height + Theme.Spacing(28);
 
-        int y = subtitle.Bottom + Theme.Px(24);
-
+// Champs
         _nom.Width = fieldWidth;
         _nom.Font = Theme.Body;
         _nom.BorderStyle = BorderStyle.FixedSingle;
         _nom.PlaceholderText = "Dupont";
-        AddField("Nom *", _nom, fieldWidth, margin, ref y);
+        AddField(card, "Nom *", _nom, margin, ref y);
 
         _prenom.Width = fieldWidth;
         _prenom.Font = Theme.Body;
         _prenom.BorderStyle = BorderStyle.FixedSingle;
         _prenom.PlaceholderText = "Jean";
-        AddField("Prénom *", _prenom, fieldWidth, margin, ref y);
+        AddField(card, "Prénom *", _prenom, margin, ref y);
 
         _email.Width = fieldWidth;
         _email.Font = Theme.Body;
         _email.BorderStyle = BorderStyle.FixedSingle;
         _email.PlaceholderText = "jean.dupont@exemple.fr";
-        AddField("Adresse e-mail *", _email, fieldWidth, margin, ref y);
+        AddField(card, "Adresse e-mail *", _email, margin, ref y);
 
         _password.Width = fieldWidth;
         _password.Font = Theme.Body;
         _password.BorderStyle = BorderStyle.FixedSingle;
         _password.UseSystemPasswordChar = true;
         _password.PlaceholderText = $"Au moins {UtilisateurService.MinPasswordLength} caractères";
-        AddField("Mot de passe *", _password, fieldWidth, margin, ref y);
+        AddField(card, "Mot de passe *", _password, margin, ref y);
 
         _passwordConfirm.Width = fieldWidth;
         _passwordConfirm.Font = Theme.Body;
         _passwordConfirm.BorderStyle = BorderStyle.FixedSingle;
         _passwordConfirm.UseSystemPasswordChar = true;
         _passwordConfirm.PlaceholderText = "Retapez le mot de passe";
-        AddField("Confirmer le mot de passe *", _passwordConfirm, fieldWidth, margin, ref y);
+        AddField(card, "Confirmer le mot de passe *", _passwordConfirm, margin, ref y);
 
         _errorLabel.AutoSize = true;
         _errorLabel.Font = Theme.Small;
         _errorLabel.ForeColor = Theme.Danger;
         _errorLabel.Location = new Point(margin, y);
         _errorLabel.Visible = false;
-        y += Theme.Px(20);
+        _errorLabel.MaximumSize = new Size(fieldWidth, 0);
+        card.Controls.Add(_errorLabel);
+        y += Theme.Spacing(24);
 
         var create = new ThemedButton
         {
             Text = "Créer le compte et continuer",
             Kind = ButtonKind.Primary,
             Width = fieldWidth,
+            Height = Theme.Px(44),
             Location = new Point(margin, y)
         };
         create.Click += OnCreate;
-        y += create.Height + Theme.Px(28);
+        card.Controls.Add(create);
+        y += create.Height + Theme.Spacing(32);
 
-        Controls.Add(logoBox);
-        Controls.Add(title);
-        Controls.Add(subtitle);
-        Controls.Add(_nom);
-        Controls.Add(_prenom);
-        Controls.Add(_email);
-        Controls.Add(_password);
-        Controls.Add(_passwordConfirm);
-        Controls.Add(_errorLabel);
-        Controls.Add(create);
+        // Ajustement hauteur carte
+        card.Height = y + Theme.Spacing(32);
+        ClientSize = new Size(cardWidth + Theme.Spacing(48), card.Height + Theme.Spacing(48));
+        card.Location = new Point(Theme.Spacing(24), Theme.Spacing(24));
+
+        Controls.Add(card);
 
         AcceptButton = create;
         CancelButton = new ThemedButton { DialogResult = DialogResult.Cancel };
-
-        ClientSize = new Size(width, y);
     }
 
-    private void AddField(string label, Control input, int inputWidth, int x, ref int y)
+    private void AddField(Control parent, string label, Control input, int x, ref int y)
     {
         var caption = new Label
         {
@@ -148,13 +195,13 @@ public sealed class FirstRunForm : Form
             AutoSize = true,
             Location = new Point(x, y)
         };
-        Controls.Add(caption);
+        parent.Controls.Add(caption);
         y += Theme.Px(22);
 
         input.Location = new Point(x, y);
-        input.Width = inputWidth;
-        Controls.Add(input);
-        y += input.Height + Theme.Px(14);
+        input.Width = input.Width;
+        parent.Controls.Add(input);
+        y += input.Height + Theme.Px(16);
     }
 
     private void OnCreate(object? sender, EventArgs e)
